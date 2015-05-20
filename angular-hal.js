@@ -64,7 +64,6 @@ angular
                     return callLink('DELETE', link, params);
                 });
 
-
                 Object.keys(data)
                     .filter(function (key) {
                         return key !== linksAttribute && key !== embeddedAttribute && !~['_', '$'].indexOf(key[0]);
@@ -76,7 +75,6 @@ angular
                             value: data[key]
                         });
                     }, this);
-
 
                 if (data[linksAttribute]) {
                     Object
@@ -113,7 +111,6 @@ angular
                         value: value
                     });
                 } //defineHiddenProperty
-
 
                 function embedResource(resource) {
                     if (Array.isArray(resource)) return resource.map(function (resource) {
@@ -185,7 +182,6 @@ angular
 
             } //Resource
 
-
             function createResource(href, options, data) {
                 if (Array.isArray(data)) return data.map(function (data) {
                     return createResource(href, options, data);
@@ -196,7 +192,6 @@ angular
                 return resource;
 
             } //createResource
-
 
             function normalizeLink(baseHref, link) {
                 if (Array.isArray(link)) return link.map(function (link) {
@@ -217,7 +212,6 @@ angular
                 return link;
             } //normalizeLink
 
-
             function callService(method, href, options, data) {
                 if (!options) options = {};
                 if (!options.headers) options.headers = {};
@@ -225,12 +219,14 @@ angular
                 if (!options.headers.Accept) options.headers.Accept = 'application/hal+json,application/json';
 
                 var resource = (
-                    $http({
+                    $http(angular.extend(options, {
                         method: method,
                         url: options.transformUrl ? options.transformUrl(href) : href,
                         headers: options.headers,
-                        data: data
-                    })
+                        data: data,
+                        transformRequest: options.transformRequest,
+                        transformResponse: options.transformResponse
+                    }))
                         .then(function (res) {
 
                             switch (Math.floor(res.status / 100)) {
@@ -250,7 +246,6 @@ angular
                 return resource;
             } //callService
 
-
             function resolveUrl(baseHref, href) {
                 var resultHref = '';
                 var reFullUrl = /^((?:\w+\:)?)((?:\/\/)?)([^\/]*)((?:\/.*)?)$/;
@@ -264,7 +259,5 @@ angular
 
                 return resultHref;
             } //resolveUrl
-
         }
-
     ]); //service
