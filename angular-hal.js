@@ -267,31 +267,29 @@ angular
                 return resultHref;
             } //resolveUrl
 
-            function preparePromise(resource, objectToFill) {
-                resource.$object = objectToFill;
-                var originalThen = resource.then;
-                var originalCatch = resource.catch;
-                var originalFinally = resource.finally;
+            function preparePromise(promise, objectToFill) {
+                promise.$object = objectToFill;
 
-                resource.then = function(successCallback, errorCallback, notifyCallback) {
-                    var chainedPromise = originalThen.apply(resource, [successCallback, errorCallback, notifyCallback]);
-                    chainedPromise.$object = objectToFill;
-                    return chainedPromise;
+                var originalThen = promise.then;
+                var originalCatch = promise.catch;
+                var originalFinally = promise.finally;
+
+                promise.then = function(successCallback, errorCallback, notifyCallback) {
+                    var chainedPromise = originalThen.apply(promise, [successCallback, errorCallback, notifyCallback]);
+                    return preparePromise(chainedPromise, objectToFill);
                 };
 
-                resource.catch = function(errorCallback) {
-                    var chainedPromise = originalCatch.apply(resource, [errorCallback]);
-                    chainedPromise.$object = objectToFill;
-                    return chainedPromise;
+                promise.catch = function(errorCallback) {
+                    var chainedPromise = originalCatch.apply(promise, [errorCallback]);
+                    return preparePromise(chainedPromise, objectToFill);
                 };
 
-                resource.finally = function(callback, notifyCallback) {
-                    var chainedPromise = originalFinally.apply(resource, [callback, notifyCallback]);
-                    chainedPromise.$object = objectToFill;
-                    return chainedPromise;
+                promise.finally = function(callback, notifyCallback) {
+                    var chainedPromise = originalFinally.apply(promise, [callback, notifyCallback]);
+                    return preparePromise(chainedPromise, objectToFill);
                 };
 
-                return resource;
+                return promise;
             }
         }
     ]); //service
