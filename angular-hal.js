@@ -218,6 +218,7 @@ angular
                 if (!options.headers['Content-Type']) options.headers['Content-Type'] = 'application/json';
                 if (!options.headers.Accept) options.headers.Accept = 'application/hal+json,application/json';
 
+                var object = {};
                 var resource = (
                     $http(angular.extend(options, {
                         method: method,
@@ -231,7 +232,12 @@ angular
 
                             switch (Math.floor(res.status / 100)) {
                                 case 2:
-                                    if (res.data) return createResource(href, options, res.data);
+                                    if (res.data) {
+                                        var newResource = createResource(href, options, res.data);
+                                        angular.copy(newResource, object);
+
+                                        return newResource;
+                                    }
                                     if (res.headers('Content-Location')) return res.headers('Content-Location');
                                     if (res.headers('Location')) return res.headers('Location');
                                     return null;
@@ -243,7 +249,8 @@ angular
                         })
                 );
 
-                return resource;
+                return preparePromise(resource, object);
+
             } //callService
 
             function resolveUrl(baseHref, href) {
@@ -259,5 +266,32 @@ angular
 
                 return resultHref;
             } //resolveUrl
+
+            function preparePromise(resource, objectToFill) {
+                resource.$object = objectToFill;
+                var originalThen = resource.then;
+                var originalCatch = resource.catch;
+                var originalFinally = resource.finally;
+
+                resource.then = function(successCallback, errorCallback, notifyCallback) {
+                    var chainedPromise = originalThen.apply(resource, [successCallback, errorCallback, notifyCallback]);
+                    chainedPromise.$object = objectToFill;
+                    return chainedPromise;
+                };
+
+                resource.catch = function(errorCallback) {
+                    var chainedPromise = originalCatch.apply(resource, [errorCallback]);
+                    chainedPromise.$object = objectToFill;
+                    return chainedPromise;
+                };
+
+                resource.finally = function(callback, notifyCallback) {
+                    var chainedPromise = originalFinally.apply(resource, [callback, notifyCallback]);
+                    chainedPromise.$object = objectToFill;
+                    return chainedPromise;
+                };
+
+                return resource;
+            }
         }
     ]); //service
